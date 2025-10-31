@@ -1,9 +1,11 @@
-# City Route Finder using BFS and DFS
-from collections import deque
+# City Route Finder using BFS and DFS (Tkinter GUI)
+from tkinter import *
+from tkinter import ttk, messagebox
 import networkx as nx
 import matplotlib.pyplot as plt
+from collections import deque
 
-# Define the city graph (Adjacency List)
+# --- Define City Graph ---
 city_graph = {
     'Delhi': ['Jaipur', 'Agra'],
     'Jaipur': ['Delhi', 'Bhopal', 'Indore'],
@@ -18,7 +20,7 @@ city_graph = {
     'Mumbai': ['Surat', 'Hyderabad']
 }
 
-# BFS Algorithm
+# --- BFS Algorithm ---
 def bfs(start, goal):
     visited = set()
     queue = deque([[start]])
@@ -35,7 +37,7 @@ def bfs(start, goal):
             visited.add(city)
     return None
 
-# DFS Algorithm
+# --- DFS Algorithm ---
 def dfs(start, goal, visited=None, path=None):
     if visited is None:
         visited = set()
@@ -51,44 +53,65 @@ def dfs(start, goal, visited=None, path=None):
                 return new_path
     return None
 
-# Input
-start_city = 'Kanpur'
-goal_city = 'Mumbai'
+# --- Graph Visualization ---
+def visualize_path(path, color):
+    G = nx.Graph()
+    for city, connections in city_graph.items():
+        for neighbor in connections:
+            G.add_edge(city, neighbor)
+    pos = nx.spring_layout(G, seed=42)
+    plt.figure(figsize=(8,6))
+    nx.draw(G, pos, with_labels=True, node_size=1200, node_color="lightblue", font_size=10, font_weight='bold')
+    if path:
+        edges = list(zip(path, path[1:]))
+        nx.draw_networkx_edges(G, pos, edgelist=edges, edge_color=color, width=3)
+    plt.title("City Route Visualization")
+    plt.show()
 
-# Find routes
-bfs_path = bfs(start_city, goal_city)
-dfs_path = dfs(start_city, goal_city)
+# --- GUI Implementation ---
+def find_route():
+    start = start_city.get()
+    end = dest_city.get()
+    algo = algorithm.get()
 
-# Print results
-print("----- City Route Finder -----")
-print(f"Start City: {start_city}")
-print(f"Destination City: {goal_city}")
-print("\nBFS Path (Shortest Route):", ' → '.join(bfs_path))
-print("DFS Path (Deep Exploration):", ' → '.join(dfs_path))
+    if start == end:
+        messagebox.showwarning("Warning", "Start and Destination cannot be the same!")
+        return
 
-# Graph Visualization
-G = nx.Graph()
+    if algo == "Breadth First Search (BFS)":
+        path = bfs(start, end)
+        color = "yellow"
+    else:
+        path = dfs(start, end)
+        color = "red"
 
-# Add edges
-for city, connections in city_graph.items():
-    for neighbor in connections:
-        G.add_edge(city, neighbor)
+    if path:
+        messagebox.showinfo("Route Found", f"Path: {' → '.join(path)}")
+        visualize_path(path, color)
+    else:
+        messagebox.showerror("Error", "No route found between selected cities!")
 
-# Graph layout
-pos = nx.spring_layout(G, seed=42)
+# --- Create Window ---
+root = Tk()
+root.title("City Route Finder using BFS and DFS")
+root.geometry("500x400")
+root.configure(bg="#f2f2f2")
 
-# Draw base graph
-nx.draw(G, pos, with_labels=True, node_size=1200, node_color="blue", font_size=10, font_weight='bold')
+Label(root, text="CITY ROUTE FINDER", font=("Arial", 16, "bold"), bg="#f2f2f2").pack(pady=10)
 
-# Highlight BFS path
-bfs_edges = list(zip(bfs_path, bfs_path[1:]))
-nx.draw_networkx_edges(G, pos, edgelist=bfs_edges, edge_color="yellow", width=3, label="BFS Path")
+Label(root, text="Select Starting City:", bg="#f2f2f2", font=("Arial", 11)).pack()
+start_city = ttk.Combobox(root, values=list(city_graph.keys()), width=30)
+start_city.pack(pady=5)
 
-# Highlight DFS path
-dfs_edges = list(zip(dfs_path, dfs_path[1:]))
-nx.draw_networkx_edges(G, pos, edgelist=dfs_edges, edge_color="red", width=3, style='dashed', label="DFS Path")
+Label(root, text="Select Destination City:", bg="#f2f2f2", font=("Arial", 11)).pack()
+dest_city = ttk.Combobox(root, values=list(city_graph.keys()), width=30)
+dest_city.pack(pady=5)
 
-# Add legend and title
-plt.title("City Route Finder using BFS and DFS")
-plt.legend()
-plt.show()
+Label(root, text="Choose Algorithm:", bg="#f2f2f2", font=("Arial", 11)).pack()
+algorithm = ttk.Combobox(root, values=["Breadth First Search (BFS)", "Depth First Search (DFS)"], width=30)
+algorithm.pack(pady=5)
+
+Button(root, text="Find Route", command=find_route, bg="#4CAF50", fg="white", font=("Arial", 11, "bold"), width=20).pack(pady=15)
+Button(root, text="Exit", command=root.destroy, bg="#E74C3C", fg="white", font=("Arial", 11, "bold"), width=20).pack(pady=5)
+
+root.mainloop()
